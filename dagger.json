@@ -1,4 +1,12 @@
 {
-  "name": "supergit",
-  "sdk": "go"
+  "name": "git",
+  "sdk": "go",
+  "dependencies": [
+    {
+      "name": "wolfi",
+      "source": "github.com/shykes/daggerverse/wolfi@dfb1f91fa463b779021d65011f0060f7decda0ba"
+    }
+  ],
+  "source": ".",
+  "engineVersion": "v0.10.0"
 }

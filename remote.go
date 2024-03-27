@@ -7,7 +7,7 @@ import (
 )
 
 // A new git remote
-func (r *Supergit) Remote(url string) *Remote {
+func (r *Git) Remote(url string) *Remote {
 	return &Remote{
 		URL: url,
 	}
@@ -86,8 +86,8 @@ type RemoteTag struct {
 
 // Return the commit referenced by the remote tag
 func (t *RemoteTag) Commit() *Commit {
-	return new(Supergit).Repository().
-		WithGitCommand([]string{"fetch", t.URL, t.Name}).
+	return new(Git).Repository().
+		WithCommand([]string{"fetch", t.URL, t.Name}).
 		Commit(t.CommitID)
 }
 
@@ -157,8 +157,8 @@ type RemoteBranch struct {
 
 // Return the commit referenced by the remote branch
 func (b *RemoteBranch) Commit() *Commit {
-	return new(Supergit).Repository().
-		WithGitCommand([]string{"fetch", b.URL, b.Name}).
+	return new(Git).Repository().
+		WithCommand([]string{"fetch", b.URL, b.Name}).
 		Commit(b.CommitID)
 }
 

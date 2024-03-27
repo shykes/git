@@ -6,11 +6,11 @@ import (
 )
 
 // A new git repository
-func (r *Supergit) Repository() *Repository {
+func (r *Git) Repository() *Repo {
 	// We need to initialize these fields in a constructor,
 	// because we can't hide them behind an accessor
 	// (private fields are not persisted in between dagger function calls)
-	return &Repository{
+	return &Repo{
 		State: container().
 			WithDirectory(gitStatePath, dag.Directory()).
 			WithExec([]string{
@@ -23,18 +23,18 @@ func (r *Supergit) Repository() *Repository {
 }
 
 // A git repository
-type Repository struct {
+type Repo struct {
 	State    *Directory
 	Worktree *Directory
 }
 
 // Execute a git command in the repository
-func (r *Repository) WithGitCommand(args []string) *Repository {
-	return r.GitCommand(args).Output()
+func (r *Repo) WithCommand(args []string) *Repo {
+	return r.Command(args).Output()
 }
 
 // A Git command executed from the current repository state
-func (r *Repository) GitCommand(args []string) *GitCommand {
+func (r *Repo) Command(args []string) *GitCommand {
 	return &GitCommand{
 		Args:  args,
 		Input: r,
@@ -44,7 +44,7 @@ func (r *Repository) GitCommand(args []string) *GitCommand {
 // A Git command
 type GitCommand struct {
 	Args  []string
-	Input *Repository
+	Input *Repo
 }
 
 func (cmd *GitCommand) container() *Container {
@@ -73,19 +73,19 @@ func (cmd *GitCommand) Sync(ctx context.Context) (*GitCommand, error) {
 	return cmd, err
 }
 
-func (cmd *GitCommand) Output() *Repository {
+func (cmd *GitCommand) Output() *Repo {
 	container := cmd.container()
-	return &Repository{
+	return &Repo{
 		State:    container.Directory(gitStatePath),
 		Worktree: container.Directory(gitWorktreePath),
 	}
 }
 
-func (r *Repository) WithRemote(name, url string) *Repository {
-	return r.WithGitCommand([]string{"remote", "add", name, url})
+func (r *Repo) WithRemote(name, url string) *Repo {
+	return r.WithCommand([]string{"remote", "add", name, url})
 }
 
-func (r *Repository) Tag(name string) *Tag {
+func (r *Repo) Tag(name string) *Tag {
 	return &Tag{
 		Repository: r,
 		Name:       name,
@@ -103,15 +103,15 @@ func (t *Tag) FullName() string {
 }
 
 type Tag struct {
-	Repository *Repository
+	Repository *Repo
 	Name       string
 }
 
 func (t *Tag) Tree() *Directory {
-	return t.Repository.WithGitCommand([]string{"checkout", t.Name}).Worktree
+	return t.Repository.WithCommand([]string{"checkout", t.Name}).Worktree
 }
 
-func (r *Repository) Commit(digest string) *Commit {
+func (r *Repo) Commit(digest string) *Commit {
 	return &Commit{
 		Repository: r,
 		Digest:     digest,
@@ -120,11 +120,11 @@ func (r *Repository) Commit(digest string) *Commit {
 
 type Commit struct {
 	Digest     string
-	Repository *Repository
+	Repository *Repo
 }
 
 func (c *Commit) Tree() *Directory {
 	return c.Repository.
-		WithGitCommand([]string{"checkout", c.Digest}).
+		WithCommand([]string{"checkout", c.Digest}).
 		Worktree
 }

@@ -5,9 +5,9 @@ const (
 	gitWorktreePath = "/git/worktree"
 )
 
-type Supergit struct{}
+type Git struct{}
 
-func (s *Supergit) Container() *Container {
+func (s *Git) Container() *Container {
 	return container()
 }
 

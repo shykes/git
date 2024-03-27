@@ -28,6 +28,13 @@ type Repo struct {
 	Worktree *Directory
 }
 
+// Filter the contents of the repository
+func (r *Repo) FilterSubdirectory(subdir string) *Repo {
+	return r.WithCommand([]string{
+		"filter-repo", "--force", "--subdirectory-filter", subdir,
+	})
+}
+
 // Execute a git command in the repository
 func (r *Repo) WithCommand(args []string) *Repo {
 	return r.Command(args).Output()

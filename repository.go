@@ -5,33 +5,34 @@ import (
 	"strings"
 )
 
-// A new git repository
-func (r *Git) Repository() *Repo {
-	// We need to initialize these fields in a constructor,
-	// because we can't hide them behind an accessor
-	// (private fields are not persisted in between dagger function calls)
-	return &Repo{
-		State: container().
-			WithDirectory(gitStatePath, dag.Directory()).
-			WithExec([]string{
-				"git", "--git-dir=" + gitStatePath,
-				"init", "-q", "--bare",
-			}).
-			Directory(gitStatePath),
-		Worktree: dag.Directory(),
-	}
-}
-
 // A git repository
 type Repo struct {
 	State    *Directory
 	Worktree *Directory
 }
 
+// Change properties of the repository
+func (r *Repo) With(
+	// Set the git state directory
+	// +optional
+	state *Directory,
+	// Set the git worktree
+	// +optional
+	worktree *Directory,
+) *Repo {
+	if state != nil {
+		r.State = state
+	}
+	if worktree != nil {
+		r.Worktree = worktree
+	}
+	return r
+}
+
 // Filter the contents of the repository
-func (r *Repo) FilterSubdirectory(subdir string) *Repo {
+func (r *Repo) Subdirectory(path string) *Repo {
 	return r.WithCommand([]string{
-		"filter-repo", "--force", "--subdirectory-filter", subdir,
+		"filter-repo", "--force", "--subdirectory-filter", path,
 	})
 }
 

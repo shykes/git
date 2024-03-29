@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// A new git remote
+// Initialize a reference to a git remote
 func (r *Git) Remote(url string) *Remote {
 	return &Remote{
 		URL: url,
@@ -86,7 +86,7 @@ type RemoteTag struct {
 
 // Return the commit referenced by the remote tag
 func (t *RemoteTag) Commit() *Commit {
-	return new(Git).Repository().
+	return new(Git).Init().
 		WithCommand([]string{"fetch", t.URL, t.Name}).
 		Commit(t.CommitID)
 }
@@ -157,7 +157,7 @@ type RemoteBranch struct {
 
 // Return the commit referenced by the remote branch
 func (b *RemoteBranch) Commit() *Commit {
-	return new(Git).Repository().
+	return new(Git).Init().
 		WithCommand([]string{"fetch", b.URL, b.Name}).
 		Commit(b.CommitID)
 }

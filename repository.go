@@ -21,6 +21,13 @@ func (r *Repo) Inspect() *Terminal {
 		Terminal()
 }
 
+// Return a checkout of the repository,
+//
+//	with combines the worktree, and the state at .git
+func (r *Repo) Checkout() *Directory {
+	return r.Worktree.WithDirectory(".git", r.State)
+}
+
 // Change properties of the repository
 func (r *Repo) With(
 	// Set the git state directory

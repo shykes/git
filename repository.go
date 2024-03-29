@@ -11,6 +11,16 @@ type Repo struct {
 	Worktree *Directory
 }
 
+// Open an interactive terminal,
+// with the repository available for inspection
+func (r *Repo) Inspect() *Terminal {
+	return container().
+		WithDirectory("/src", r.Worktree).
+		WithDirectory("/src/.git", r.State).
+		WithWorkdir("/src").
+		Terminal()
+}
+
 // Change properties of the repository
 func (r *Repo) With(
 	// Set the git state directory

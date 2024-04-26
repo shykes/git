@@ -21,11 +21,19 @@ func (r *Repo) Inspect() *Terminal {
 		Terminal()
 }
 
-// Return a checkout of the repository,
+// Combine the repository's worktree and state into a single directory.
 //
-//	with combines the worktree, and the state at .git
-func (r *Repo) Checkout() *Directory {
+//	The state is copied to `.git`
+func (r *Repo) Directory() *Directory {
 	return r.Worktree.WithDirectory(".git", r.State)
+}
+
+// Checkout the given ref into the worktree
+func (r *Repo) Checkout(
+	// The git ref to checkout
+	ref string,
+) *Repo {
+	return r.WithCommand([]string{"git", "checkout", ref})
 }
 
 // Change properties of the repository
@@ -47,7 +55,7 @@ func (r *Repo) With(
 }
 
 // Filter the contents of the repository
-func (r *Repo) Subdirectory(path string) *Repo {
+func (r *Repo) FilterSubdirectory(path string) *Repo {
 	return r.WithCommand([]string{
 		"filter-repo", "--force", "--subdirectory-filter", path,
 	})

@@ -14,7 +14,7 @@ const (
 type Git struct{}
 
 // Load the contents of a git repository
-func (s *Git) Load(
+func (g *Git) Load(
 	ctx context.Context,
 	// The source directory to load.
 	// It must contain a `.git` directory, or be one.
@@ -44,7 +44,7 @@ func (s *Git) Load(
 }
 
 // Initialize a git repository
-func (r *Git) Init() *Repo {
+func (g *Git) Init() *Repo {
 	return &Repo{
 		State: container().
 			WithDirectory(gitStatePath, dag.Directory()).
@@ -58,12 +58,12 @@ func (r *Git) Init() *Repo {
 }
 
 // Clone a remote git repository
-func (s *Git) Clone(ctx context.Context, url string) *Repo {
+func (g *Git) Clone(ctx context.Context, url string) *Repo {
 	clone := container().
 		WithWorkdir("/tmp").
 		WithExec([]string{"git", "clone", url, "src"}).
 		Directory("src")
-	return s.
+	return g.
 		Init().
 		With(clone.Directory(".git"), clone.WithoutDirectory(".git"))
 }

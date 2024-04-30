@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 )
 
 const (
@@ -14,25 +13,7 @@ const (
 	gitFilterRepoURL    = "https://raw.githubusercontent.com/newren/git-filter-repo/" + gitFilterRepoCommit + "/git-filter-repo"
 )
 
-type Git struct {
-	// +private
-	KnownHosts []string
-}
-
-func New(
-	// +optional
-	knownHost []string,
-) *Git {
-	return &Git{
-		KnownHosts: knownHost,
-	}
-}
-
-func (g *Git) WithKnownHost(host string) *Git {
-	return &Git{
-		KnownHosts: append(g.KnownHosts, host),
-	}
-}
+type Git struct{}
 
 // Load the contents of a git repository
 func (g *Git) Load(
@@ -106,15 +87,6 @@ func (g *Git) container() *Container {
 				Permissions: 0755,
 			},
 		).
-		With(func(c *Container) *Container {
-			if len(g.KnownHosts) > 0 {
-				c = c.WithExec([]string{"mkdir", "-p", "/root/.ssh"})
-
-				for _, host := range g.KnownHosts {
-					c = c.WithExec([]string{"sh", "-c", fmt.Sprintf("ssh-keyscan %s >> /root/.ssh/known_hosts", host)})
-				}
-			}
-
-			return c
-		})
+		WithMountedCache("/root/.ssh", dag.CacheVolume("git-known-hosts")).
+		WithEnvVariable("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=accept-new")
 }

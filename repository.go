@@ -33,7 +33,7 @@ func (r *Repo) Checkout(
 	// The git ref to checkout
 	ref string,
 ) *Repo {
-	return r.WithCommand([]string{"git", "checkout", ref})
+	return r.WithCommand([]string{"checkout", ref})
 }
 
 // Set the git state directory

@@ -9,12 +9,14 @@ import (
 type Repo struct {
 	State    *Directory
 	Worktree *Directory
+
+	Git *Git
 }
 
 // Open an interactive terminal,
 // with the repository available for inspection
 func (r *Repo) Inspect() *Terminal {
-	return container().
+	return r.Git.container().
 		WithDirectory("/src", r.Worktree).
 		WithDirectory("/src/.git", r.State).
 		WithWorkdir("/src").
@@ -67,6 +69,7 @@ func (r *Repo) Command(args []string) *GitCommand {
 	return &GitCommand{
 		Args:  args,
 		Input: r,
+		Git:   r.Git,
 	}
 }
 
@@ -74,12 +77,15 @@ func (r *Repo) Command(args []string) *GitCommand {
 type GitCommand struct {
 	Args  []string
 	Input *Repo
+
+	// +private
+	Git *Git
 }
 
 func (cmd *GitCommand) container() *Container {
 	prefix := []string{"git", "--git-dir=" + gitStatePath, "--work-tree=" + gitWorktreePath}
 	execArgs := append(prefix, cmd.Args...)
-	return container().
+	return cmd.Git.container().
 		WithDirectory(gitStatePath, cmd.Input.State).
 		WithDirectory(gitWorktreePath, cmd.Input.Worktree).
 		WithExec(execArgs)
@@ -107,6 +113,7 @@ func (cmd *GitCommand) Output() *Repo {
 	return &Repo{
 		State:    container.Directory(gitStatePath),
 		Worktree: container.Directory(gitWorktreePath),
+		Git:      cmd.Git,
 	}
 }
 

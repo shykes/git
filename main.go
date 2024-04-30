@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"strings"
 )
 
 const (
@@ -13,7 +14,21 @@ const (
 	gitFilterRepoURL    = "https://raw.githubusercontent.com/newren/git-filter-repo/" + gitFilterRepoCommit + "/git-filter-repo"
 )
 
-type Git struct{}
+type Git struct {
+	// +private
+	SSHKey *Secret
+}
+
+func New(
+	// SSH key to use for git operations.
+	//
+	// +optional
+	sshKey *Secret,
+) *Git {
+	return &Git{
+		SSHKey: sshKey,
+	}
+}
 
 // Load the contents of a git repository
 func (g *Git) Load(
@@ -73,6 +88,11 @@ func (g *Git) Clone(ctx context.Context, url string) *Repo {
 }
 
 func (g *Git) container() *Container {
+	sshArgs := []string{
+		"ssh",
+		"-o", "StrictHostKeyChecking=accept-new",
+	}
+
 	return dag.
 		Wolfi().
 		Container(WolfiContainerOpts{
@@ -86,5 +106,21 @@ func (g *Git) container() *Container {
 			},
 		).
 		WithMountedCache("/root/.ssh", dag.CacheVolume("git-known-hosts")).
-		WithEnvVariable("GIT_SSH_COMMAND", "ssh -o StrictHostKeyChecking=accept-new")
+		With(func(c *Container) *Container {
+			if g.SSHKey != nil {
+				sshArgs = append(sshArgs, "-i", "/git/ssh-key")
+
+				// This is an ugly hack until the following issue is resolved: https://github.com/dagger/dagger/issues/7220
+				sshKeyContent, _ := g.SSHKey.Plaintext(context.TODO())
+				sshKeyContent += "\n"
+
+				sshKey := dag.SetSecret("ssh-key", sshKeyContent)
+
+				c = c.
+					WithMountedSecret("/git/ssh-key", sshKey)
+			}
+
+			return c
+		}).
+		WithEnvVariable("GIT_SSH_COMMAND", strings.Join(sshArgs, " "))
 }

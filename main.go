@@ -72,7 +72,7 @@ func container() *Container {
 	return dag.
 		Wolfi().
 		Container(WolfiContainerOpts{
-			Packages: []string{"git", "python3"},
+			Packages: []string{"git", "openssh", "python3"},
 		}).
 		WithFile(
 			"/bin/git-filter-repo",

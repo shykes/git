@@ -1,7 +1,10 @@
 // Git as a Dagger Module
 package main
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 const (
 	gitStatePath    = "/git/state"
@@ -11,7 +14,25 @@ const (
 	gitFilterRepoURL    = "https://raw.githubusercontent.com/newren/git-filter-repo/" + gitFilterRepoCommit + "/git-filter-repo"
 )
 
-type Git struct{}
+type Git struct {
+	// +private
+	KnownHosts []string
+}
+
+func New(
+	// +optional
+	knownHost []string,
+) *Git {
+	return &Git{
+		KnownHosts: knownHost,
+	}
+}
+
+func (g *Git) WithKnownHost(host string) *Git {
+	return &Git{
+		KnownHosts: append(g.KnownHosts, host),
+	}
+}
 
 // Load the contents of a git repository
 func (g *Git) Load(
@@ -55,6 +76,7 @@ func (g *Git) Init() *Repo {
 			}).
 			Directory(gitStatePath),
 		Worktree: dag.Directory(),
+		Git:      g,
 	}
 }
 
@@ -75,7 +97,7 @@ func (g *Git) container() *Container {
 	return dag.
 		Wolfi().
 		Container(WolfiContainerOpts{
-			Packages: []string{"git", "openssh", "python3"},
+			Packages: []string{"git", "openssh-client", "openssh-keyscan", "python3"},
 		}).
 		WithFile(
 			"/bin/git-filter-repo",
@@ -83,5 +105,16 @@ func (g *Git) container() *Container {
 			ContainerWithFileOpts{
 				Permissions: 0755,
 			},
-		)
+		).
+		With(func(c *Container) *Container {
+			if len(g.KnownHosts) > 0 {
+				c = c.WithExec([]string{"mkdir", "-p", "/root/.ssh"})
+
+				for _, host := range g.KnownHosts {
+					c = c.WithExec([]string{"sh", "-c", fmt.Sprintf("ssh-keyscan %s >> /root/.ssh/known_hosts", host)})
+				}
+			}
+
+			return c
+		})
 }

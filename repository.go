@@ -10,6 +10,7 @@ type Repo struct {
 	State    *Directory
 	Worktree *Directory
 
+	// +private
 	Git *Git
 }
 

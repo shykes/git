@@ -10,17 +10,21 @@ import (
 func (r *Git) Remote(url string) *Remote {
 	return &Remote{
 		URL: url,
+		Git: r,
 	}
 }
 
 // A git remote
 type Remote struct {
 	URL string
+
+	// +private
+	Git *Git
 }
 
 // Lookup a tag in the remote
 func (r *Remote) Tag(ctx context.Context, name string) (*RemoteTag, error) {
-	output, err := container().WithExec([]string{"git", "ls-remote", "--tags", r.URL, name}).Stdout(ctx)
+	output, err := r.Git.container().WithExec([]string{"git", "ls-remote", "--tags", r.URL, name}).Stdout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -30,6 +34,7 @@ func (r *Remote) Tag(ctx context.Context, name string) (*RemoteTag, error) {
 		CommitID: commit,
 		Name:     name,
 		URL:      r.URL,
+		Git:      r.Git,
 	}, nil
 }
 
@@ -52,7 +57,7 @@ func (r *Remote) Tags(
 			return nil, err
 		}
 	}
-	output, err := container().WithExec([]string{"git", "ls-remote", "--tags", r.URL}).Stdout(ctx)
+	output, err := r.Git.container().WithExec([]string{"git", "ls-remote", "--tags", r.URL}).Stdout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +77,7 @@ func (r *Remote) Tags(
 			Name:     name,
 			CommitID: commit,
 			URL:      r.URL,
+			Git:      r.Git,
 		})
 	}
 	return tags, nil
@@ -82,18 +88,21 @@ type RemoteTag struct {
 	Name     string
 	CommitID string
 	URL      string
+
+	// +private
+	Git *Git
 }
 
 // Return the commit referenced by the remote tag
 func (t *RemoteTag) Commit() *Commit {
-	return new(Git).Init().
+	return t.Git.Init().
 		WithCommand([]string{"fetch", t.URL, t.Name}).
 		Commit(t.CommitID)
 }
 
 // Lookup a branch in the remote
 func (r *Remote) Branch(ctx context.Context, name string) (*RemoteBranch, error) {
-	output, err := container().WithExec([]string{"git", "ls-remote", r.URL, name}).Stdout(ctx)
+	output, err := r.Git.container().WithExec([]string{"git", "ls-remote", r.URL, name}).Stdout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +112,7 @@ func (r *Remote) Branch(ctx context.Context, name string) (*RemoteBranch, error)
 		URL:      r.URL,
 		CommitID: commit,
 		Name:     name,
+		Git:      r.Git,
 	}, nil
 }
 
@@ -123,7 +133,7 @@ func (r *Remote) Branches(
 			return nil, err
 		}
 	}
-	output, err := container().WithExec([]string{"git", "ls-remote", "--heads", r.URL}).Stdout(ctx)
+	output, err := r.Git.container().WithExec([]string{"git", "ls-remote", "--heads", r.URL}).Stdout(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +153,7 @@ func (r *Remote) Branches(
 			Name:     name,
 			CommitID: commit,
 			URL:      r.URL,
+			Git:      r.Git,
 		})
 	}
 	return branches, nil
@@ -153,11 +164,14 @@ type RemoteBranch struct {
 	Name     string
 	CommitID string
 	URL      string
+
+	// +private
+	Git *Git
 }
 
 // Return the commit referenced by the remote branch
 func (b *RemoteBranch) Commit() *Commit {
-	return new(Git).Init().
+	return b.Git.Init().
 		WithCommand([]string{"fetch", b.URL, b.Name}).
 		Commit(b.CommitID)
 }

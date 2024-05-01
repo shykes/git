@@ -1,6 +1,9 @@
 {
   "name": "git",
   "sdk": "go",
+  "exclude": [
+    "dev"
+  ],
   "dependencies": [
     {
       "name": "wolfi",

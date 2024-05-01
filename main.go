@@ -63,9 +63,11 @@ func (g *Git) Clone(ctx context.Context, url string) *Repo {
 		WithWorkdir("/tmp").
 		WithExec([]string{"git", "clone", url, "src"}).
 		Directory("src")
+
 	return g.
 		Init().
-		With(clone.Directory(".git"), clone.WithoutDirectory(".git"))
+		WithState(clone.Directory(".git")).
+		WithWorktree(clone.WithoutDirectory(".git"))
 }
 
 func container() *Container {

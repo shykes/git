@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"strings"
+	"time"
 )
 
 const (
@@ -80,6 +81,7 @@ func (g *Git) Init() *Repo {
 func (g *Git) Clone(ctx context.Context, url string) *Repo {
 	clone := g.container().
 		WithWorkdir("/tmp").
+		WithEnvVariable("CACHE_BUSTER", time.Now().Format(time.RFC3339Nano)).
 		WithExec([]string{"git", "clone", url, "src"}).
 		Directory("src")
 

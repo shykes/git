@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run pipeline
+        uses: dagger/dagger-for-github@eba69b4dddb54eddfdb51a88eb7fd86957137630 # v5.4.0
+        with:
+          verb: call
+          module: github.com/${{ github.repository }}/dev@${{ github.ref }}
+          args: test all
+          version: "0.11.2"

@@ -36,21 +36,17 @@ func (r *Repo) Checkout(
 	return r.WithCommand([]string{"git", "checkout", ref})
 }
 
-// Change properties of the repository
-func (r *Repo) With(
-	// Set the git state directory
-	// +optional
-	state *Directory,
-	// Set the git worktree
-	// +optional
-	worktree *Directory,
-) *Repo {
-	if state != nil {
-		r.State = state
-	}
-	if worktree != nil {
-		r.Worktree = worktree
-	}
+// Set the git state directory
+func (r *Repo) WithState(dir *Directory) *Repo {
+	r.State = dir
+
+	return r
+}
+
+// Set the git worktree
+func (r *Repo) WithWorktree(dir *Directory) *Repo {
+	r.Worktree = dir
+
 	return r
 }
 

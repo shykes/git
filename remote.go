@@ -96,7 +96,7 @@ type RemoteTag struct {
 // Return the commit referenced by the remote tag
 func (t *RemoteTag) Commit() *Commit {
 	return t.Git.Init().
-		WithCommand([]string{"fetch", t.URL, t.Name}).
+		WithCommand([]string{"fetch", t.URL, t.Name}, false).
 		Commit(t.CommitID)
 }
 
@@ -172,7 +172,7 @@ type RemoteBranch struct {
 // Return the commit referenced by the remote branch
 func (b *RemoteBranch) Commit() *Commit {
 	return b.Git.Init().
-		WithCommand([]string{"fetch", b.URL, b.Name}).
+		WithCommand([]string{"fetch", b.URL, b.Name}, false).
 		Commit(b.CommitID)
 }
 

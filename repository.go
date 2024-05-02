@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"strings"
+	"time"
 )
 
 // A git repository
@@ -36,7 +37,7 @@ func (r *Repo) Checkout(
 	// The git ref to checkout
 	ref string,
 ) *Repo {
-	return r.WithCommand([]string{"checkout", ref})
+	return r.WithCommand([]string{"checkout", ref}, false)
 }
 
 // Set the git state directory
@@ -57,27 +58,39 @@ func (r *Repo) WithWorktree(dir *Directory) *Repo {
 func (r *Repo) FilterSubdirectory(path string) *Repo {
 	return r.WithCommand([]string{
 		"filter-repo", "--force", "--subdirectory-filter", path,
-	})
+	}, false)
 }
 
 // Execute a git command in the repository
-func (r *Repo) WithCommand(args []string) *Repo {
-	return r.Command(args).Output()
+func (r *Repo) WithCommand(
+	args []string,
+
+	// +optional
+	noCache bool,
+) *Repo {
+	return r.Command(args, noCache).Output()
 }
 
 // A Git command executed from the current repository state
-func (r *Repo) Command(args []string) *GitCommand {
+func (r *Repo) Command(
+	args []string,
+
+	// +optional
+	noCache bool,
+) *GitCommand {
 	return &GitCommand{
-		Args:  args,
-		Input: r,
-		Git:   r.Git,
+		Args:    args,
+		NoCache: noCache,
+		Input:   r,
+		Git:     r.Git,
 	}
 }
 
 // A Git command
 type GitCommand struct {
-	Args  []string
-	Input *Repo
+	Args    []string
+	NoCache bool
+	Input   *Repo
 
 	// +private
 	Git *Git
@@ -89,6 +102,13 @@ func (cmd *GitCommand) container() *Container {
 	return cmd.Git.container().
 		WithDirectory(gitStatePath, cmd.Input.State).
 		WithDirectory(gitWorktreePath, cmd.Input.Worktree).
+		With(func(c *Container) *Container {
+			if cmd.NoCache {
+				c = c.WithEnvVariable("CACHE_BUSTER", time.Now().Format(time.RFC3339Nano))
+			}
+
+			return c
+		}).
 		WithExec(execArgs)
 }
 
@@ -119,7 +139,7 @@ func (cmd *GitCommand) Output() *Repo {
 }
 
 func (r *Repo) WithRemote(name, url string) *Repo {
-	return r.WithCommand([]string{"remote", "add", name, url})
+	return r.WithCommand([]string{"remote", "add", name, url}, false)
 }
 
 func (r *Repo) Tag(name string) *Tag {
@@ -145,7 +165,7 @@ type Tag struct {
 }
 
 func (t *Tag) Tree() *Directory {
-	return t.Repository.WithCommand([]string{"checkout", t.Name}).Worktree
+	return t.Repository.WithCommand([]string{"checkout", t.Name}, false).Worktree
 }
 
 func (r *Repo) Commit(digest string) *Commit {
@@ -162,6 +182,6 @@ type Commit struct {
 
 func (c *Commit) Tree() *Directory {
 	return c.Repository.
-		WithCommand([]string{"checkout", c.Digest}).
+		WithCommand([]string{"checkout", c.Digest}, false).
 		Worktree
 }

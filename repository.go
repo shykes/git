@@ -2,32 +2,23 @@ package main
 
 import (
 	"context"
+	"git/internal/dagger"
 	"strings"
 )
 
 // A git repository
 type Repo struct {
-	State    *Directory
-	Worktree *Directory
+	State    *dagger.Directory
+	Worktree *dagger.Directory
 
 	// +private
 	Git *Git
 }
 
-// Open an interactive terminal,
-// with the repository available for inspection
-func (r *Repo) Inspect() *Terminal {
-	return r.Git.container().
-		WithDirectory("/src", r.Worktree).
-		WithDirectory("/src/.git", r.State).
-		WithWorkdir("/src").
-		Terminal()
-}
-
 // Combine the repository's worktree and state into a single directory.
 //
 //	The state is copied to `.git`
-func (r *Repo) Directory() *Directory {
+func (r *Repo) Directory() *dagger.Directory {
 	return r.Worktree.WithDirectory(".git", r.State)
 }
 
@@ -40,14 +31,14 @@ func (r *Repo) Checkout(
 }
 
 // Set the git state directory
-func (r *Repo) WithState(dir *Directory) *Repo {
+func (r *Repo) WithState(dir *dagger.Directory) *Repo {
 	r.State = dir
 
 	return r
 }
 
 // Set the git worktree
-func (r *Repo) WithWorktree(dir *Directory) *Repo {
+func (r *Repo) WithWorktree(dir *dagger.Directory) *Repo {
 	r.Worktree = dir
 
 	return r
@@ -57,6 +48,13 @@ func (r *Repo) WithWorktree(dir *Directory) *Repo {
 func (r *Repo) FilterSubdirectory(path string) *Repo {
 	return r.WithCommand([]string{
 		"filter-repo", "--force", "--subdirectory-filter", path,
+	})
+}
+
+// Filter history by moving the whole repo to a subdirectory
+func (r *Repo) FilterToSubdirectory(path string) *Repo {
+	return r.WithCommand([]string{
+		"filter-repo", "--force", "--to-subdirectory-filter", path,
 	})
 }
 
@@ -83,17 +81,13 @@ type GitCommand struct {
 	Git *Git
 }
 
-func (cmd *GitCommand) container() *Container {
+func (cmd *GitCommand) container() *dagger.Container {
 	prefix := []string{"git", "--git-dir=" + gitStatePath, "--work-tree=" + gitWorktreePath}
 	execArgs := append(prefix, cmd.Args...)
 	return cmd.Git.container().
 		WithDirectory(gitStatePath, cmd.Input.State).
 		WithDirectory(gitWorktreePath, cmd.Input.Worktree).
 		WithExec(execArgs)
-}
-
-func (cmd *GitCommand) Debug() *Terminal {
-	return cmd.container().WithWorkdir(gitWorktreePath).Terminal()
 }
 
 func (cmd *GitCommand) Stdout(ctx context.Context) (string, error) {
@@ -144,7 +138,7 @@ type Tag struct {
 	Name       string
 }
 
-func (t *Tag) Tree() *Directory {
+func (t *Tag) Tree() *dagger.Directory {
 	return t.Repository.WithCommand([]string{"checkout", t.Name}).Worktree
 }
 
@@ -160,7 +154,7 @@ type Commit struct {
 	Repository *Repo
 }
 
-func (c *Commit) Tree() *Directory {
+func (c *Commit) Tree() *dagger.Directory {
 	return c.Repository.
 		WithCommand([]string{"checkout", c.Digest}).
 		Worktree

@@ -1,15 +1,17 @@
 {
   "name": "git",
-  "sdk": "go",
-  "exclude": [
-    "dev"
+  "engineVersion": "v0.16.2",
+  "sdk": {
+    "source": "go"
+  },
+  "include": [
+    "!dev"
   ],
   "dependencies": [
     {
       "name": "wolfi",
-      "source": "github.com/shykes/daggerverse/wolfi@dfb1f91fa463b779021d65011f0060f7decda0ba"
+      "source": "github.com/dagger/dagger/modules/wolfi",
+      "pin": "e4de3dc7f3311371fbc30ff19852a7e32ed61940"
     }
-  ],
-  "source": ".",
-  "engineVersion": "v0.11.1"
+  ]
 }

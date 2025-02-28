@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"git/internal/dagger"
 	"strings"
 	"time"
 )
@@ -17,14 +18,14 @@ const (
 
 type Git struct {
 	// +private
-	SSHKey *Secret
+	SSHKey *dagger.Secret
 }
 
 func New(
 	// SSH key to use for git operations.
 	//
 	// +optional
-	sshKey *Secret,
+	sshKey *dagger.Secret,
 ) *Git {
 	return &Git{
 		SSHKey: sshKey,
@@ -36,12 +37,12 @@ func (g *Git) Load(
 	ctx context.Context,
 	// The source directory to load.
 	// It must contain a `.git` directory, or be one.
-	source *Directory,
+	source *dagger.Directory,
 	// A separate worktree, if needed.
 	// +optional
-	worktree *Directory,
+	worktree *dagger.Directory,
 ) (*Repo, error) {
-	var state *Directory
+	var state *dagger.Directory
 	if _, err := source.Directory(".git").Entries(ctx); err != nil {
 		// If there is no .git, assume source *is* a .git
 		state = source
@@ -91,7 +92,7 @@ func (g *Git) Clone(ctx context.Context, url string) *Repo {
 		WithWorktree(clone.WithoutDirectory(".git"))
 }
 
-func (g *Git) container() *Container {
+func (g *Git) container() *dagger.Container {
 	sshArgs := []string{
 		"ssh",
 		"-o", "StrictHostKeyChecking=accept-new",
@@ -99,18 +100,18 @@ func (g *Git) container() *Container {
 
 	return dag.
 		Wolfi().
-		Container(WolfiContainerOpts{
+		Container(dagger.WolfiContainerOpts{
 			Packages: []string{"git", "openssh-client", "openssh-keyscan", "python3"},
 		}).
 		WithFile(
 			"/bin/git-filter-repo",
 			dag.HTTP(gitFilterRepoURL),
-			ContainerWithFileOpts{
+			dagger.ContainerWithFileOpts{
 				Permissions: 0755,
 			},
 		).
 		WithMountedCache("/root/.ssh", dag.CacheVolume("git-known-hosts")).
-		With(func(c *Container) *Container {
+		With(func(c *dagger.Container) *dagger.Container {
 			if g.SSHKey != nil {
 				sshArgs = append(sshArgs, "-i", "/git/ssh-key")
 

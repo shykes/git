@@ -58,6 +58,11 @@ func (r *Repo) FilterToSubdirectory(path string) *Repo {
 	})
 }
 
+// Set a git config value
+func (r *Repo) WithConfig(key, value string) *Repo {
+	return r.WithCommand([]string{"config", key, value})
+}
+
 // Execute a git command in the repository
 func (r *Repo) WithCommand(args []string) *Repo {
 	return r.Command(args).Output()
